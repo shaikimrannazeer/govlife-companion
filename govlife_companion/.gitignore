@@ -1,0 +1,9 @@
+.env
+govlife.db
+__pycache__/
+*.pyc
+.venv/
+backups/
+uploads/*
+!uploads/.gitkeep
+

@@ -1,0 +1,146 @@
+/* GovLife Companion clean dashboard theme */
+:root {
+  --navy: #12315c;
+  --soft-blue: #eaf2ff;
+  --green: #15803d;
+  --orange: #c77700;
+  --red: #b91c1c;
+  --gray: #f5f7fb;
+}
+
+.main .block-container {
+  padding-top: 1.4rem;
+  max-width: 1180px;
+}
+
+[data-testid="stSidebar"] {
+  background: #0f2748;
+}
+
+[data-testid="stSidebar"] * {
+  color: #ffffff;
+}
+
+.gov-card {
+  background: #ffffff;
+  border: 1px solid #e6ebf2;
+  border-radius: 8px;
+  padding: 16px;
+  box-shadow: 0 1px 8px rgba(18, 49, 92, 0.06);
+  min-height: 104px;
+}
+
+.gov-card .label {
+  color: #617089;
+  font-size: 0.86rem;
+  margin-bottom: 8px;
+}
+
+.gov-card .value {
+  color: #12315c;
+  font-size: 1.4rem;
+  font-weight: 700;
+}
+
+.status-good {
+  color: var(--green);
+  font-weight: 700;
+}
+
+.status-warn {
+  color: var(--orange);
+  font-weight: 700;
+}
+
+.status-danger {
+  color: var(--red);
+  font-weight: 700;
+}
+
+.privacy-note {
+  background: #fff7ed;
+  border-left: 4px solid #f59e0b;
+  padding: 12px 14px;
+  border-radius: 6px;
+  color: #7c2d12;
+}
+
+.robo-bubble-fixed {
+  position: fixed;
+  right: 88px;
+  bottom: 34px;
+  z-index: 9999;
+  background: #ffffff;
+  color: #12315c;
+  border: 1px solid #d8e2ef;
+  border-radius: 8px;
+  padding: 8px 11px;
+  font-size: 0.86rem;
+  box-shadow: 0 8px 22px rgba(18, 49, 92, 0.16);
+}
+
+div.st-key-robo_help_button {
+  position: fixed;
+  right: 22px;
+  bottom: 24px;
+  z-index: 10000;
+}
+
+div.st-key-robo_help_button button {
+  width: 54px;
+  height: 54px;
+  border-radius: 50%;
+  background: #12315c;
+  color: #ffffff;
+  font-size: 1.55rem;
+  box-shadow: 0 10px 24px rgba(18, 49, 92, 0.28);
+  border: 0;
+  transition: transform 0.15s ease, background 0.15s ease;
+}
+
+div.st-key-robo_help_button button:hover {
+  transform: translateY(-2px);
+  background: #1b4b87;
+  color: #ffffff;
+  border: 0;
+}
+
+h1, h2, h3 {
+  color: #12315c;
+}
+
+@media (max-width: 768px) {
+  .main .block-container {
+    padding: 0.75rem 0.75rem 5rem;
+  }
+
+  .gov-card {
+    min-height: auto;
+    padding: 12px;
+  }
+
+  .gov-card .value {
+    font-size: 1.12rem;
+  }
+
+  .robo-bubble-fixed {
+    right: 74px;
+    bottom: 24px;
+    font-size: 0.78rem;
+    max-width: 160px;
+  }
+
+  div.st-key-robo_help_button {
+    right: 14px;
+    bottom: 16px;
+  }
+
+  div.st-key-robo_help_button button {
+    width: 48px;
+    height: 48px;
+  }
+
+  [data-testid="stMetricValue"] {
+    font-size: 1.05rem;
+  }
+}
