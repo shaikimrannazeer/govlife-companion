@@ -18,10 +18,21 @@ def logout() -> None:
     st.rerun()
 
 
+def _sync_auth_language() -> None:
+    st.session_state.language = st.session_state.auth_language
+
+
 def render_auth() -> None:
     if "language" not in st.session_state:
         st.session_state.language = "English"
-    st.selectbox(t("please_select_language"), LANGUAGES, key="language")
+    if "auth_language" not in st.session_state:
+        st.session_state.auth_language = st.session_state.language
+    st.selectbox(
+        t("please_select_language"),
+        LANGUAGES,
+        key="auth_language",
+        on_change=_sync_auth_language,
+    )
     st.title("GovLife Companion")
     st.caption("A personal life management app for government employees and families.")
     tab_login, tab_register = st.tabs([t("login"), t("register")])
@@ -32,14 +43,20 @@ def render_auth() -> None:
             password = st.text_input(t("password"), type="password")
             submitted = st.form_submit_button(t("login"), use_container_width=True)
         if submitted:
-            user = fetch_one("SELECT * FROM users WHERE login_id=?", (login_id.strip(),))
-            if user and verify_password(password, user["password_hash"]):
+            login_id = login_id.strip()
+            if not login_id or not password:
+                st.warning(t("invalid_login"))
+                return
+
+            user = fetch_one("SELECT * FROM users WHERE login_id=?", (login_id,))
+            password_matches = bool(user and verify_password(password, user["password_hash"]))
+            if password_matches:
                 st.session_state.user = dict(user)
                 st.session_state.language = user["preferred_language"] or st.session_state.get("language", "English")
-                st.success(t("login_success"))
                 st.rerun()
-            else:
-                st.error(t("invalid_login"))
+                return
+
+            st.error(t("invalid_login"))
 
         st.info("Demo user: demo@govlife.in / demo123\n\nAdmin: admin@govlife.in / admin123")
 
