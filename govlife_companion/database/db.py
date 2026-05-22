@@ -71,14 +71,10 @@ def _run_migrations(conn: sqlite3.Connection) -> None:
 
 
 def _seed_demo_data(conn: sqlite3.Connection) -> None:
-    existing = conn.execute("SELECT COUNT(*) FROM users").fetchone()[0]
-    if existing:
-        return
-
     user_hash = hash_password("demo123")
     admin_hash = hash_password("admin123")
     conn.execute(
-        """INSERT INTO users
+        """INSERT OR IGNORE INTO users
         (full_name, login_id, password_hash, role, department, job_type,
          date_of_joining, expected_retirement_date, monthly_salary, city, family_size)
         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
@@ -86,53 +82,64 @@ def _seed_demo_data(conn: sqlite3.Connection) -> None:
          "Clerk", "2012-07-01", "2042-06-30", 65000, "Hyderabad", 4),
     )
     conn.execute(
-        """INSERT INTO users
+        """INSERT OR IGNORE INTO users
         (full_name, login_id, password_hash, role, department, job_type,
          date_of_joining, expected_retirement_date, monthly_salary, city, family_size)
         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
         ("GovLife Admin", "admin@govlife.in", admin_hash, "admin", "Administration",
          "Admin", "2010-01-01", "2040-01-01", 90000, "Delhi", 3),
     )
-    user_id = 1
-    conn.executemany(
-        "INSERT INTO salary (user_id, month, amount, source, notes) VALUES (?, ?, ?, ?, ?)",
-        [(user_id, "2026-05", 65000, "Monthly salary", "Demo salary"),
-         (user_id, "2026-04", 64000, "Monthly salary", "Demo salary")],
-    )
-    conn.executemany(
-        """INSERT INTO expenses (user_id, expense_date, category, amount, expense_type, notes)
-        VALUES (?, ?, ?, ?, ?, ?)""",
-        [
-            (user_id, "2026-05-05", "Food", 12000, "Variable", "Groceries"),
-            (user_id, "2026-05-07", "EMI", 18000, "Fixed", "Home loan EMI"),
-            (user_id, "2026-05-10", "Children education", 9000, "Fixed", "School fees"),
-            (user_id, "2026-05-12", "Bills", 4500, "Fixed", "Power and mobile"),
-        ],
-    )
+
+    demo_user = conn.execute("SELECT id FROM users WHERE login_id=?", ("demo@govlife.in",)).fetchone()
+    if not demo_user:
+        conn.commit()
+        return
+
+    user_id = demo_user["id"]
+    if conn.execute("SELECT COUNT(*) FROM salary WHERE user_id=?", (user_id,)).fetchone()[0] == 0:
+        conn.executemany(
+            "INSERT INTO salary (user_id, month, amount, source, notes) VALUES (?, ?, ?, ?, ?)",
+            [(user_id, "2026-05", 65000, "Monthly salary", "Demo salary"),
+             (user_id, "2026-04", 64000, "Monthly salary", "Demo salary")],
+        )
+    if conn.execute("SELECT COUNT(*) FROM expenses WHERE user_id=?", (user_id,)).fetchone()[0] == 0:
+        conn.executemany(
+            """INSERT INTO expenses (user_id, expense_date, category, amount, expense_type, notes)
+            VALUES (?, ?, ?, ?, ?, ?)""",
+            [
+                (user_id, "2026-05-05", "Food", 12000, "Variable", "Groceries"),
+                (user_id, "2026-05-07", "EMI", 18000, "Fixed", "Home loan EMI"),
+                (user_id, "2026-05-10", "Children education", 9000, "Fixed", "School fees"),
+                (user_id, "2026-05-12", "Bills", 4500, "Fixed", "Power and mobile"),
+            ],
+        )
+    if conn.execute("SELECT COUNT(*) FROM loans WHERE user_id=?", (user_id,)).fetchone()[0] == 0:
+        conn.execute(
+            """INSERT INTO loans (user_id, loan_type, bank_name, loan_amount, interest_rate,
+            emi_amount, start_date, end_date, remaining_balance, due_day)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
+            (user_id, "Home loan", "SBI", 2200000, 8.5, 18000, "2020-01-01", "2035-01-01", 1650000, 7),
+        )
+    if conn.execute("SELECT COUNT(*) FROM reminders WHERE user_id=?", (user_id,)).fetchone()[0] == 0:
+        conn.execute(
+            """INSERT INTO reminders (user_id, title, category, reminder_date, repeat_type, priority, status, notes)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?)""",
+            (user_id, "Home loan EMI", "EMI", "2026-05-25", "Monthly", "High", "Pending", "Keep balance ready"),
+        )
     conn.execute(
-        """INSERT INTO loans (user_id, loan_type, bank_name, loan_amount, interest_rate,
-        emi_amount, start_date, end_date, remaining_balance, due_day)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
-        (user_id, "Home loan", "SBI", 2200000, 8.5, 18000, "2020-01-01", "2035-01-01", 1650000, 7),
-    )
-    conn.execute(
-        """INSERT INTO reminders (user_id, title, category, reminder_date, repeat_type, priority, status, notes)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?)""",
-        (user_id, "Home loan EMI", "EMI", "2026-05-25", "Monthly", "High", "Pending", "Keep balance ready"),
-    )
-    conn.execute(
-        """INSERT INTO leave_balance
+        """INSERT OR IGNORE INTO leave_balance
         (user_id, total_cl, used_cl, remaining_cl, total_el, used_el, remaining_el)
         VALUES (?, ?, ?, ?, ?, ?, ?)""",
         (user_id, 12, 5, 7, 30, 8, 22),
     )
-    conn.executemany(
-        """INSERT INTO leave_records
-        (user_id, leave_type, from_date, to_date, days, reason, status)
-        VALUES (?, ?, ?, ?, ?, ?, ?)""",
-        [
-            (user_id, "CL", "2026-05-03", "2026-05-03", 1, "Family work", "Approved"),
-            (user_id, "EL", "2026-06-10", "2026-06-14", 5, "Family trip", "Pending"),
-        ],
-    )
+    if conn.execute("SELECT COUNT(*) FROM leave_records WHERE user_id=?", (user_id,)).fetchone()[0] == 0:
+        conn.executemany(
+            """INSERT INTO leave_records
+            (user_id, leave_type, from_date, to_date, days, reason, status)
+            VALUES (?, ?, ?, ?, ?, ?, ?)""",
+            [
+                (user_id, "CL", "2026-05-03", "2026-05-03", 1, "Family work", "Approved"),
+                (user_id, "EL", "2026-06-10", "2026-06-14", 5, "Family trip", "Pending"),
+            ],
+        )
     conn.commit()
